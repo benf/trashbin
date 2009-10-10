@@ -10,9 +10,14 @@ struct parport_list port_list;
 int main(int argc, char **argv)
 {
   if (argc < 3) {
-    fprintf(stderr, "usage: %s <control> <data>", argv[0]);
+    fprintf(stderr, "usage: %s <control> <data>\n", argv[0]);
     return -1;
   }
+
+  int ctrl;
+  sscanf(argv[1], "%x", &ctrl);
+  int data;
+  sscanf(argv[2], "%x", &data);
 
 	int status = 0;
 	int i = 0;
@@ -78,8 +83,8 @@ int main(int argc, char **argv)
 	write_ctrl(6);
 	write_ctrl(15);
 
-	ieee1284_write_data(curr_port, atoi(argv[2]));
-	ieee1284_write_control(curr_port, atoi(argv[1]));
+	ieee1284_write_data(curr_port, data);
+	ieee1284_write_control(curr_port, ctrl);
 
 	//ieee1284_write_data(curr_port, 0x30);
 
