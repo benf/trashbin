@@ -7,8 +7,13 @@ void print_status_open(int);
 struct parport* curr_port;
 struct parport_list port_list;
 
-int main()
+int main(int argc, char **argv)
 {
+  if (argc < 3) {
+    fprintf(stderr, "usage: %s <control> <data>", argv[0]);
+    return -1;
+  }
+
 	int status = 0;
 	int i = 0;
 	int capability = 0;
@@ -53,17 +58,17 @@ int main()
 	ieee1284_write_control(curr_port, 3);
 	ieee1284_write_control(curr_port, 2);
 	ieee1284_write_control(curr_port, 3);
-	sleep(1);
+  usleep(50);
 	ieee1284_write_data(curr_port, 0x30);
 	ieee1284_write_control(curr_port, 3);
 	ieee1284_write_control(curr_port, 2);
 	ieee1284_write_control(curr_port, 3);
-	sleep(1);
+  usleep(50);
 	ieee1284_write_data(curr_port, 0x30);
 	ieee1284_write_control(curr_port, 3);
 	ieee1284_write_control(curr_port, 2);
 	ieee1284_write_control(curr_port, 3);
-	sleep(1);
+  usleep(50);
 
 	//
 	write_ctrl(0x38);
@@ -73,8 +78,8 @@ int main()
 	write_ctrl(6);
 	write_ctrl(15);
 
-	//ieee1284_write_data(curr_port, 0xF);
-	//ieee1284_write_control(curr_port, 1);
+	ieee1284_write_data(curr_port, atoi(argv[2]));
+	ieee1284_write_control(curr_port, atoi(argv[1]));
 
 	//ieee1284_write_data(curr_port, 0x30);
 
@@ -95,7 +100,7 @@ void write_ctrl(int data)
 	ieee1284_write_control(curr_port, 2);
 	usleep(100);
 	ieee1284_write_control(curr_port, 3);
-	sleep(1);
+  usleep(200);
 }
 
 void print_status_open( int status)
