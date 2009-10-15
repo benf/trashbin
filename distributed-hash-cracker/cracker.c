@@ -10,7 +10,7 @@
 // Define a cracing task
 typedef struct {
 	int base;
-	int keysize;
+	int keysize_max;
 	char* charset;
 	char* salt;
 	int algorithm;
@@ -28,45 +28,57 @@ int main( int argc, char **argv)
 	crack_task crack;
 
 	char *key;
-	int key_nr = 365;
+	char *key_c;
+	int i = 0;
 
 	crack.base = 3;
-	crack.keysize = 6;
+	crack.keysize_max = 3;
 
-	key = (char*) calloc(sizeof(char), crack.keysize);
+	key 	= (char*) calloc(sizeof(char), crack.keysize_max);
+	key_c 	= (char*) calloc(sizeof(char), crack.keysize_max);
 	crack.charset = (char*) calloc(sizeof(char), crack.base);
 
 	strncpy( crack.charset, "abc", crack.base);
 
-	while(get_next_key(crack, key, 0) != -1)
-		printf("%s\n", key);
-
-	keynr_2_key(crack, key_nr, key);
-
-	printf("Keynumber: %d key: %s\n", key_nr, key);
-
-	get_next_key(crack, key, 0);
-
-	printf("next key: %s\n", key);
-
+	do
+	{
+		keynr_2_key(crack, i, key_c);
+		printf("%d\t%s\t%s\n", i, key, key_c);
+		++i;
+	}
+	while(get_next_key(crack, key, 0) == 0);
 	
 	free(key);
+	free(key_c);
+	free(crack.charset);
 
 	return 0;
 }
 
 // convert a position of a key in the keyrange to the spezific key
-int keynr_2_key( crack_task crack, int key_nr, char *key)
+int keynr_2_key(crack_task crack, int key_nr, char *key)
 {
 	int char_nr = 0;
 	int i = 0;
-	while(key_nr != 0)
+	int keylen = 0;
+
+	if(key_nr == 0)
+	{
+		key[0] = '\0';
+		return 0;
+	}
+
+	for(keylen = 0; key_nr >= pow(crack.base, keylen); ++keylen)
+		key_nr -= pow(crack.base, keylen);
+
+	do
 	{
 		char_nr = key_nr % crack.base;
 		key_nr = key_nr / crack.base;
 		key[i] = crack.charset[char_nr];
 		i++;
 	}
+	while(key_nr != 0 || strlen(key) != keylen);
 
 	return 0;
 }
@@ -88,7 +100,7 @@ int get_next_key(crack_task crack, char* key, int pos)
 			else
 			{
 				key[pos] = crack.charset[0];
-				if((pos + 1) < crack.keysize)
+				if((pos + 1) < crack.keysize_max)
 					return get_next_key(crack, key, pos + 1);
 				else
 					return -1;;
