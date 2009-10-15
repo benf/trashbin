@@ -34,8 +34,8 @@ int main( int argc, char **argv)
 	crack.base = 3;
 	crack.keysize_max = 3;
 
-	key 	= (char*) calloc(sizeof(char), crack.keysize_max);
-	key_c 	= (char*) calloc(sizeof(char), crack.keysize_max);
+	key 	= (char*) calloc(sizeof(char), crack.keysize_max +1);
+	key_c 	= (char*) calloc(sizeof(char), crack.keysize_max +1);
 	crack.charset = (char*) calloc(sizeof(char), crack.base);
 
 	strncpy( crack.charset, "abc", crack.base);
