@@ -32,5 +32,6 @@ int keynr_2_key(crack_task, int, char*);
 int get_next_key(crack_task, char*, int);
 int ben_next_key(crack_task, char*);
 int compare_hash(char*, char*);
+void usage(void);
 
 #endif

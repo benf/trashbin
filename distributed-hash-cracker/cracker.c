@@ -1,16 +1,63 @@
-#include <stdio.h>
-#include <math.h>
-#include <string.h>
-#include <stdlib.h>
-#include <crypt.h>
+#include <unistd.h>
+#include <getopt.h>
 
 #include "cracker.h"
 
 int main( int argc, char **argv)
 {
 	crack_task crack;
-	char *key;
+	int option = 0;
+	int optionindex = 0;
 	int i = 0;
+
+	static struct option long_options[] =
+	{
+		{"help"		, 0, NULL, 'h'},
+		{"hash"		, 1, NULL, 'a'},
+		{"charset"	, 1, NULL, 'c'},
+		{"length"	, 1, NULL, 'l'},
+		{"file"		, 1, NULL, 'f'},
+		{0		, 0, 0, 0}
+	};
+
+	while((option = getopt_long( argc, argv, "h:c:l:f:", long_options, &optionindex)) != -1)
+	{
+		switch (option)
+		{
+			case 'a':
+				crack.hash = (char*) calloc(sizeof(char), strlen(optarg) +1);
+				strncpy(crack.hash, optarg, strlen(optarg));
+				printf("hash: %s\n", crack.hash);
+				break;
+
+			case 'c':
+				crack.charset = (char*) calloc(sizeof(char), strlen(optarg));
+				strncpy(crack.charset, optarg, strlen(optarg));
+				printf("charset: %s\n", crack.charset);
+				break;
+			
+			case 'l':
+				for(i = 0; i < strlen(optarg); ++i)
+					if(isdigit(optarg[i]) == 0)
+						return -1;
+
+				crack.keysize_max = atoi(optarg);
+				printf("Keysize: %d\n", crack.keysize_max);
+				break;
+
+			case 'f':
+				printf("File: %s\nThis option is not implemented!\n", optarg);
+				break;
+			case 'h':
+			default:
+				usage();
+				break;
+		}
+	}
+
+	exit(0);
+
+	char *key;
 	int counter = 0;
 	crack.hash = (char*) calloc(sizeof(char), 150+1);
 	strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
@@ -40,6 +87,20 @@ int main( int argc, char **argv)
 	free(crack.charset);
 
 	return 0;
+}
+
+void usage(void)
+{
+	const char* usage_str =
+	"usage: cracker <option>\n\n"
+	"Option                   Discription\n\n"
+	"-h, --hash <HASH>        Define a spezific hash to crack\n"
+	"-c, --charset <CHARSET>  Define charset which the searched\n"
+	"                         password consists of.\n"
+	"-l, --length <NUM>       Maximum password length\n"
+	"-f, --file <FILE>        Password file (like /etc/shadow)\n";
+
+	printf("%s", usage_str);
 }
 
 //calculate the keyrange
@@ -143,14 +204,10 @@ int ben_next_key(crack_task crack, char *key) {
 int compare_hash(char* key, char* hash)
 {
 	char* key_hash;
-	int result;
-	
 	key_hash = (char*) crypt(key, hash);
 
 	if(strncmp(key_hash, hash, strlen(key_hash)) == 0)
-		result = 1;
-	else
-		result = 0;
-
-	return result;
+		return 1;
+	
+	return 0;
 }
