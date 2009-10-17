@@ -12,19 +12,19 @@
 
 // Define a cracing task and all attribus which related on this
 typedef struct {
-	int base;
-	int keysize_max;
+	unsigned int base;
+	unsigned int keysize_max;
 	char* charset;
 	char* hash;
 	char* salt;
-	int algorithm;
+	unsigned int algorithm;
 
 	//additional information
 	unsigned long long int keyrange;
 
 	// for splitting calculation, e.g. threading or distributed computing
 	char* start_key;
-	char* end_key;
+	unsigned int keyarea;
 } crack_task;
 
 unsigned long long int keyrange(crack_task);

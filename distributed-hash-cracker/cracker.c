@@ -8,6 +8,7 @@ int main( int argc, char **argv)
 	crack_task crack;
 	int option = 0;
 	int optionindex = 0;
+	char *key;
 	int i = 0;
 
 	static struct option long_options[] =
@@ -20,20 +21,19 @@ int main( int argc, char **argv)
 		{0		, 0, 0, 0}
 	};
 
-	while((option = getopt_long( argc, argv, "h:c:l:f:", long_options, &optionindex)) != -1)
+	while((option = getopt_long( argc, argv, "ha:c:l:f:", long_options, &optionindex)) != -1)
 	{
 		switch (option)
 		{
 			case 'a':
-				crack.hash = (char*) calloc(sizeof(char), strlen(optarg) +1);
+				crack.hash = (char*) calloc(sizeof(char), strlen(optarg) + 1);
 				strncpy(crack.hash, optarg, strlen(optarg));
-				printf("hash: %s\n", crack.hash);
 				break;
 
 			case 'c':
-				crack.charset = (char*) calloc(sizeof(char), strlen(optarg));
-				strncpy(crack.charset, optarg, strlen(optarg));
-				printf("charset: %s\n", crack.charset);
+				crack.base = strlen(optarg);
+				crack.charset = (char*) calloc(sizeof(char), crack.base + 1);
+				strncpy(crack.charset, optarg, crack.base);
 				break;
 			
 			case 'l':
@@ -42,7 +42,6 @@ int main( int argc, char **argv)
 						return -1;
 
 				crack.keysize_max = atoi(optarg);
-				printf("Keysize: %d\n", crack.keysize_max);
 				break;
 
 			case 'f':
@@ -55,35 +54,9 @@ int main( int argc, char **argv)
 		}
 	}
 
-	exit(0);
-
-	char *key;
-	int counter = 0;
-	crack.hash = (char*) calloc(sizeof(char), 150+1);
-	strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
-	crack.base = 21;
-	crack.keysize_max = 4;
-
-	key = (char*) calloc(sizeof(char), crack.keysize_max +1);
-	crack.charset = (char*) calloc(sizeof(char), crack.base +1);
-
-	strncpy( crack.charset, "abcdefghijklmnopqrstu", crack.base);
-
-	crack.keyrange = keyrange(crack);
-	printf("KeyRange: %d\n", crack.keyrange);
-
-	do
-	{
-		++counter;
-		if(compare_hash(key, crack.hash) == 1)
-			printf("Find: %s\n", key);
-	}
-	while(get_next_key(crack, key, 0) == 0);
-	while(ben_next_key(crack, key) == 0);
-
-	printf("counter: %d\n", counter);
-
-	free(key);
+	// Testkey: blub
+	//strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
+	
 	free(crack.charset);
 
 	return 0;
@@ -101,6 +74,37 @@ void usage(void)
 	"-f, --file <FILE>        Password file (like /etc/shadow)\n";
 
 	printf("%s", usage_str);
+}
+
+void print_config(crack_task crack)
+{
+	printf("Charset: %s\n", crack.charset);
+	printf("Base: %d\n", crack.base);
+	printf("Keyrange: %d\n\n", keyrange(crack));
+	printf("Hash: %s\n", crack.hash);
+}
+
+char* start_task(crack_task crack)
+{
+	int counter = 0;
+	char* key = (char*) calloc(sizeof(char), crack.keysize_max +1);
+
+	if(crack.start_key != NULL)
+		strncpy(key, crack.start_key, crack.keysize);
+	
+	do
+	{
+		if(compare_hash(key, crack.hash) == 1)
+			printf("Find: %s\n", key);
+		++counter;
+	}
+	while(get_next_key(crack, key, 0) == 0 && counter <= crack.keyarea);
+	//while(ben_next_key(crack, key) == 0);
+
+	printf("counter: %d\n", counter);
+
+	free(key);
+	return NULL;
 }
 
 //calculate the keyrange
