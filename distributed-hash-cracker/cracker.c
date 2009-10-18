@@ -3,6 +3,11 @@
 
 #include "cracker.h"
 
+void* doing(void* arg)
+{
+	sleep(5);
+}
+
 int main( int argc, char **argv)
 {
 	crack_task crack;
@@ -10,6 +15,7 @@ int main( int argc, char **argv)
 	int optionindex = 0;
 	char *key;
 	int i = 0;
+	int threads = 0;
 
 	static struct option long_options[] =
 	{
@@ -18,10 +24,11 @@ int main( int argc, char **argv)
 		{"charset"	, 1, NULL, 'c'},
 		{"length"	, 1, NULL, 'l'},
 		{"file"		, 1, NULL, 'f'},
+		{"threads"	, 1, NULL, 't'},
 		{0		, 0, 0, 0}
 	};
 
-	while((option = getopt_long( argc, argv, "ha:c:l:f:", long_options, &optionindex)) != -1)
+	while((option = getopt_long( argc, argv, "ha:c:l:f:t:", long_options, &optionindex)) != -1)
 	{
 		switch (option)
 		{
@@ -47,6 +54,15 @@ int main( int argc, char **argv)
 			case 'f':
 				printf("File: %s\nThis option is not implemented!\n", optarg);
 				break;
+
+			case 't':
+				for(i = 0; i < strlen(optarg); ++i)
+					if(isdigit(optarg[i]) == 0)
+						return -1;
+
+				threads = atoi(optarg);
+				break;
+
 			case 'h':
 			default:
 				usage();
@@ -56,8 +72,13 @@ int main( int argc, char **argv)
 
 	// Testkey: blub
 	//strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
+
+	pthread_t thread;
 	
-	free(crack.charset);
+	printf("blub!\n");
+	i = pthread_create(&thread, NULL, &doing, NULL);
+
+	printf("status: %d\n", i);
 
 	return 0;
 }
@@ -90,7 +111,7 @@ char* start_task(crack_task crack)
 	char* key = (char*) calloc(sizeof(char), crack.keysize_max +1);
 
 	if(crack.start_key != NULL)
-		strncpy(key, crack.start_key, crack.keysize);
+		strncpy(key, crack.start_key, crack.keysize_max);
 	
 	do
 	{

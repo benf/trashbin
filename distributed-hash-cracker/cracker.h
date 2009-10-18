@@ -6,6 +6,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <crypt.h>
+#include <pthread.h>
 
 #define MD5	1
 #define SHA1	2
