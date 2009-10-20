@@ -31,7 +31,7 @@ typedef struct {
 typedef struct {
 	pthread_t thread_id;
 	int thread_num;
-	crack_task* task;
+	crack_task task;
 } thread_info;
 
 unsigned long long int keyrange(crack_task);
@@ -42,5 +42,6 @@ int compare_hash(char*, char*);
 void usage(void);
 void* start_crack_task(void*);
 void init_crack_task(crack_task*);
+int calculate_sub_task(crack_task*, crack_task*, int, int);
 
 #endif

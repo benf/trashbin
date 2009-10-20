@@ -93,16 +93,22 @@ int main( int argc, char **argv)
 		strncpy(crack.charset, "abc", 3);
 	}
 
+	crack.keyarea_size = crack.keyrange / thread_number;
+
 	// Testkey: blub
 	//strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
-	tinfo = calloc(sizeof(thread_info), (size_t) thread_number);
+	printf("allocating memomy for %d threads\n\n", thread_number);
+	tinfo = calloc(thread_number, sizeof(thread_info));
+	if(tinfo == NULL)
+		printf("error: tinfo == NULL\n\n");;
 	pthread_t thread;
 	
-	printf("for\n\n");
-
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
 		tinfo[tnum].thread_num = tnum + 1;
+		printf("calculating thread task thread_number:%d tnum:%d\n\n", thread_number, tnum);
+		calculate_sub_task(&crack, &tinfo[tnum].task, thread_number, tnum);
+
 		printf("crate\n\n");
 		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
 		printf("starting thread number: %d status:%d\n", tnum, status);
@@ -113,6 +119,33 @@ int main( int argc, char **argv)
 		
 	}
 
+	return 0;
+}
+
+int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number, int tnum)
+{
+	int keynr_beginn = 0;
+	
+	printf("cal: task: %d of %d\n\n", tnum, thread_number);
+
+	subtask->charset 	= (char*) calloc(strlen(task->charset) 	+ 1, sizeof(char));
+	subtask->hash 		= (char*) calloc(strlen(task->hash) 	+ 1, sizeof(char));
+	subtask->salt 		= (char*) calloc(strlen(task->salt) 	+ 1, sizeof(char));
+
+	printf("copy stings from task to subtask\n\n");
+
+	strncpy(subtask->charset, task->charset, task->base);
+	strncpy(subtask->hash, task->hash, strlen(task->hash));
+	strncpy(subtask->salt, task->salt, strlen(task->salt));
+
+	subtask->base 		= task->base;
+	subtask->keysize_max 	= task->keysize_max;
+	subtask->algorithm 	= task->algorithm;
+
+	subtask->keyrange	= task->keyrange;
+
+	keynr_beginn = task->keyarea_size * tnum;
+	keynr_2_key(*task, keynr_beginn, subtask->start_key);
 	return 0;
 }
 
