@@ -11,12 +11,20 @@ void* doing(void* arg)
 int main( int argc, char **argv)
 {
 	crack_task crack;
+	thread_info** thread_tasks;
 	int option = 0;
 	int optionindex = 0;
-	char *key;
+	char *key; // returned key
 	int i = 0;
-	int threads = 0;
+	int status = 0;
+	int thread_number = 0; // user defined number of threads
+	int tnum = 0; // counter for for-loops
+	thread_info *tinfo;
 
+	// initilize crack struct
+	init_crack_task( &crack);
+
+	// define commandline options
 	static struct option long_options[] =
 	{
 		{"help"		, 0, NULL, 'h'},
@@ -25,9 +33,10 @@ int main( int argc, char **argv)
 		{"length"	, 1, NULL, 'l'},
 		{"file"		, 1, NULL, 'f'},
 		{"threads"	, 1, NULL, 't'},
-		{0		, 0, 0, 0}
+		{0, 0, 0, 0}
 	};
 
+	// analysing commandline options
 	while((option = getopt_long( argc, argv, "ha:c:l:f:t:", long_options, &optionindex)) != -1)
 	{
 		switch (option)
@@ -60,7 +69,9 @@ int main( int argc, char **argv)
 					if(isdigit(optarg[i]) == 0)
 						return -1;
 
-				threads = atoi(optarg);
+				thread_number = atoi(optarg);
+				if( thread_number < 1)
+					thread_number = 1;
 				break;
 
 			case 'h':
@@ -69,16 +80,38 @@ int main( int argc, char **argv)
 				break;
 		}
 	}
+	
+	if(crack.hash == NULL)
+	{
+		usage();
+		return -1;
+	}
+
+	if(crack.charset == NULL)
+	{
+		crack.charset = (char*) calloc(sizeof(char), 4);
+		strncpy(crack.charset, "abc", 3);
+	}
 
 	// Testkey: blub
 	//strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
-
+	tinfo = calloc(sizeof(thread_info), (size_t) thread_number);
 	pthread_t thread;
 	
-	printf("blub!\n");
-	i = pthread_create(&thread, NULL, &doing, NULL);
+	printf("for\n\n");
 
-	printf("status: %d\n", i);
+	for(tnum = 0; tnum < thread_number; ++tnum)
+	{
+		tinfo[tnum].thread_num = tnum + 1;
+		printf("crate\n\n");
+		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
+		printf("starting thread number: %d status:%d\n", tnum, status);
+	}
+
+	for(tnum = 0; tnum < thread_number; ++tnum)
+	{
+		
+	}
 
 	return 0;
 }
@@ -105,24 +138,24 @@ void print_config(crack_task crack)
 	printf("Hash: %s\n", crack.hash);
 }
 
-char* start_task(crack_task crack)
+// single cracking thread
+void* start_crack_task(void* arg)
 {
+	crack_task* task = (crack_task *) arg;
 	int counter = 0;
-	char* key = (char*) calloc(sizeof(char), crack.keysize_max +1);
-
-	if(crack.start_key != NULL)
-		strncpy(key, crack.start_key, crack.keysize_max);
+	char* key = (char*) calloc(sizeof(char), task->keysize_max +1);
+	
+	if(task->start_key != NULL)
+		strncpy(key, task->start_key, task->keysize_max);
 	
 	do
 	{
-		if(compare_hash(key, crack.hash) == 1)
-			printf("Find: %s\n", key);
+		if(compare_hash(key, task->hash) == 1)
+			return key;
 		++counter;
 	}
-	while(get_next_key(crack, key, 0) == 0 && counter <= crack.keyarea);
+	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
 	//while(ben_next_key(crack, key) == 0);
-
-	printf("counter: %d\n", counter);
 
 	free(key);
 	return NULL;
@@ -223,6 +256,20 @@ int ben_next_key(crack_task crack, char *key) {
 	if (l == 0)
 		key[0] = crack.charset[0];
 	return 0;
+}
+
+// set a task to zero
+void init_crack_task(crack_task* task)
+{
+	task->base = 0;
+	task->keysize_max = 0;
+	task->charset = NULL;
+	task->hash = NULL;
+	task->salt = NULL;
+	task->algorithm = 0;
+	task->keyrange = 0;
+	task->start_key = NULL;
+	task->keyarea_size = 0;
 }
 
 //compare
