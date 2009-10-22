@@ -10,19 +10,19 @@ void* doing(void* arg)
 
 int main( int argc, char **argv)
 {
-	crack_task crack;
+	crack_task task;
 	thread_info** thread_tasks;
 	int option = 0;
 	int optionindex = 0;
-	char *key; // returned key
+	void* key; // returned key
 	int i = 0;
 	int status = 0;
-	int thread_number = 0; // user defined number of threads
+	int thread_number = 1; // user defined number of threads
 	int tnum = 0; // counter for for-loops
 	thread_info *tinfo;
 
 	// initilize crack struct
-	init_crack_task( &crack);
+	init_crack_task( &task);
 
 	// define commandline options
 	static struct option long_options[] =
@@ -42,14 +42,14 @@ int main( int argc, char **argv)
 		switch (option)
 		{
 			case 'a':
-				crack.hash = (char*) calloc(sizeof(char), strlen(optarg) + 1);
-				strncpy(crack.hash, optarg, strlen(optarg));
+				task.hash = (char*) calloc(sizeof(char), strlen(optarg) + 1);
+				strncpy(task.hash, optarg, strlen(optarg));
 				break;
 
 			case 'c':
-				crack.base = strlen(optarg);
-				crack.charset = (char*) calloc(sizeof(char), crack.base + 1);
-				strncpy(crack.charset, optarg, crack.base);
+				task.base = strlen(optarg);
+				task.charset = (char*) calloc(sizeof(char), task.base + 1);
+				strncpy(task.charset, optarg, task.base);
 				break;
 			
 			case 'l':
@@ -57,7 +57,7 @@ int main( int argc, char **argv)
 					if(isdigit(optarg[i]) == 0)
 						return -1;
 
-				crack.keysize_max = atoi(optarg);
+				task.keysize_max = atoi(optarg);
 				break;
 
 			case 'f':
@@ -70,8 +70,6 @@ int main( int argc, char **argv)
 						return -1;
 
 				thread_number = atoi(optarg);
-				if( thread_number < 1)
-					thread_number = 1;
 				break;
 
 			case 'h':
@@ -81,42 +79,52 @@ int main( int argc, char **argv)
 		}
 	}
 	
-	if(crack.hash == NULL)
+	// calculating and checking of user inputs
+	task.keyrange = keyrange(task);
+
+	if(thread_number < 1)
+		thread_number = 1;
+	
+	if(task.hash == NULL)
 	{
 		usage();
 		return -1;
 	}
 
-	if(crack.charset == NULL)
+	if(task.charset == NULL)
 	{
-		crack.charset = (char*) calloc(sizeof(char), 4);
-		strncpy(crack.charset, "abc", 3);
+		task.charset = (char*) calloc(sizeof(char), 4);
+		strncpy(task.charset, "abc", 3);
 	}
 
-	crack.keyarea_size = crack.keyrange / thread_number;
+	div_t blub = div( task.keyrange, thread_number);
+	
+	task.keyarea_size = blub.quot;
+	
+	printf("keyarea_size: %d\n\n", task.keyarea_size);
 
 	// Testkey: blub
-	//strncpy( crack.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
-	printf("allocating memomy for %d threads\n\n", thread_number);
+	//strncpy( task.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
 	tinfo = calloc(thread_number, sizeof(thread_info));
 	if(tinfo == NULL)
 		printf("error: tinfo == NULL\n\n");;
 	pthread_t thread;
-	
+
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
 		tinfo[tnum].thread_num = tnum + 1;
-		printf("calculating thread task thread_number:%d tnum:%d\n\n", thread_number, tnum);
-		calculate_sub_task(&crack, &tinfo[tnum].task, thread_number, tnum);
-
-		printf("crate\n\n");
+		calculate_sub_task(&task, &tinfo[tnum].task, thread_number, tnum);
+	
 		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
-		printf("starting thread number: %d status:%d\n", tnum, status);
 	}
 
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
-		
+		status = pthread_join(tinfo[tnum].thread_id, &key);
+		if(key != NULL)
+			printf("Find: %s\n\n", (char*) key);
+		else
+			printf("Not Found!\n\n");
 	}
 
 	return 0;
@@ -125,27 +133,29 @@ int main( int argc, char **argv)
 int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number, int tnum)
 {
 	int keynr_beginn = 0;
-	
-	printf("cal: task: %d of %d\n\n", tnum, thread_number);
 
-	subtask->charset 	= (char*) calloc(strlen(task->charset) 	+ 1, sizeof(char));
-	subtask->hash 		= (char*) calloc(strlen(task->hash) 	+ 1, sizeof(char));
-	subtask->salt 		= (char*) calloc(strlen(task->salt) 	+ 1, sizeof(char));
+	init_crack_task(subtask);
 
-	printf("copy stings from task to subtask\n\n");
+	if(task->charset 	!= NULL) subtask->charset 	= (char*) calloc(strlen(task->charset) 	+ 1, sizeof(char));
+	if(task->hash 		!= NULL) subtask->hash 		= (char*) calloc(strlen(task->hash)  	+ 1, sizeof(char));
+	if(task->salt   	!= NULL) subtask->salt 		= (char*) calloc(strlen(task->salt) 	+ 1, sizeof(char));
 
-	strncpy(subtask->charset, task->charset, task->base);
-	strncpy(subtask->hash, task->hash, strlen(task->hash));
-	strncpy(subtask->salt, task->salt, strlen(task->salt));
+	if(task->charset 	!= NULL) strncpy(subtask->charset, task->charset, task->base);
+	if(task->hash		!= NULL) strncpy(subtask->hash, task->hash, strlen(task->hash));
+	if(task->salt		!= NULL) strncpy(subtask->salt, task->salt, strlen(task->salt));
 
 	subtask->base 		= task->base;
 	subtask->keysize_max 	= task->keysize_max;
 	subtask->algorithm 	= task->algorithm;
-
 	subtask->keyrange	= task->keyrange;
 
 	keynr_beginn = task->keyarea_size * tnum;
+
+	printf("beginn key: %d\n\n", keynr_beginn);
+	subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
 	keynr_2_key(*task, keynr_beginn, subtask->start_key);
+	printf("startkey: %s\n\n", subtask->start_key);
+	
 	return 0;
 }
 
@@ -174,24 +184,37 @@ void print_config(crack_task crack)
 // single cracking thread
 void* start_crack_task(void* arg)
 {
+	char* key;
+//*	
 	crack_task* task = (crack_task *) arg;
+
 	int counter = 0;
-	char* key = (char*) calloc(sizeof(char), task->keysize_max +1);
+	key = (char*) calloc(sizeof(char), task->keysize_max + 1);
 	
 	if(task->start_key != NULL)
 		strncpy(key, task->start_key, task->keysize_max);
 	
 	do
 	{
+		printf("key: \"%s\"\n", key);
 		if(compare_hash(key, task->hash) == 1)
 			return key;
 		++counter;
+
+		printf("counter: %d\n\n", counter);
+		printf("keyarea_size: %d\n\n", task->keyarea_size);
+
 	}
 	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
 	//while(ben_next_key(crack, key) == 0);
 
 	free(key);
-	return NULL;
+//*/
+//	char* blub;
+//	blub = (char*) calloc( 1, sizeof(char));
+//	*blub = 'h';
+
+	return NULL; 
 }
 
 //calculate the keyrange
@@ -212,6 +235,11 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 	int i = 0;
 	int keylen = 0;
 
+	if(key == NULL)
+	{
+		key = (char*) calloc( crack.keysize_max + 1, sizeof(char));
+	}
+
 	if(key_nr == 0)
 	{
 		key[0] = '\0';
@@ -220,7 +248,7 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 
 	for(keylen = 0; key_nr >= pow(crack.base, keylen); ++keylen)
 		key_nr -= pow(crack.base, keylen);
-
+	
 	do
 	{
 		char_nr = key_nr % crack.base;
@@ -229,6 +257,8 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 		i++;
 	}
 	while(key_nr != 0 || strlen(key) != keylen);
+
+	printf("key: %s\n\n", key);
 
 	return 0;
 }
