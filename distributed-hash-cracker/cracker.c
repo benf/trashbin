@@ -92,13 +92,8 @@ int main( int argc, char **argv)
 	}
 
 	div_t blub = div( task.keyrange, thread_number);
-	
 	task.keyarea_size = blub.quot;
 	
-	printf("keyarea_size: %d\n\n", task.keyarea_size);
-
-	// Testkey: blub
-	//strncpy( task.hash, "$6$qSR2U5h6$sWgBeng0MV80FRpFBNG9SQjFOwxDOPF7WNZchhifRQKXuxTnhptVR4y5A4YbMFya8qnSdic1UH0KoN2pMIl6O0", 150);
 	tinfo = calloc(thread_number, sizeof(thread_info));
 	if(tinfo == NULL)
 		printf("error: tinfo == NULL\n\n");;
@@ -107,7 +102,7 @@ int main( int argc, char **argv)
 	{
 		tinfo[tnum].thread_num = tnum + 1;
 		calculate_sub_task(&task, &tinfo[tnum].task, thread_number, tnum);
-	
+
 		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
 	}
 
@@ -116,10 +111,13 @@ int main( int argc, char **argv)
 		status = pthread_join(tinfo[tnum].thread_id, &key);
 
 		if(key != NULL)
-			printf("Find: %s\n\n", (char*) key);
+			printf("Find: \"%s\"\n\n", (char*) key);
 		else
 			printf("Not Found!\n\n");
 	}
+	
+	if(key != NULL)
+	free(key);
 
 	return 0;
 }
@@ -142,13 +140,18 @@ int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number,
 	subtask->keysize_max 	= task->keysize_max;
 	subtask->algorithm 	= task->algorithm;
 	subtask->keyrange	= task->keyrange;
+	subtask->keyarea_size	= task->keyarea_size;
 
 	keynr_beginn = task->keyarea_size * tnum;
 
-	printf("beginn key: %d\n\n", keynr_beginn);
-	//subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
+	//printf("beginn key: %d\n\n", keynr_beginn);
+	subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
 	keynr_2_key(*task, keynr_beginn, subtask->start_key);
-	printf("startkey: %s\n\n", subtask->start_key);
+
+	if(subtask->start_key == NULL)
+		printf("start_key is NULL\n");
+
+	//printf("startkey: \"%s\"\n\n", subtask->start_key);
 	
 	return 0;
 }
@@ -184,7 +187,7 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 	}
 	while(key_nr != 0 || strlen(key) != keylen);
 
-	printf("key: %s\n\n", key);
+	//printf("key: %s\n\n", key);
 
 	return 0;
 }
@@ -225,14 +228,9 @@ void* start_crack_task(void* arg)
 	
 	do
 	{
-		printf("key: \"%s\"\n", key);
 		if(compare_hash(key, task->hash) == 1)
 			return key;
 		++counter;
-
-		printf("counter: %d\n\n", counter);
-		printf("keyarea_size: %d\n\n", task->keyarea_size);
-
 	}
 	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
 	//while(ben_next_key(crack, key) == 0);
