@@ -118,9 +118,12 @@ int main( int argc, char **argv)
 		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
 	}
 
+	sleep(1);
+
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
 		status = pthread_join(tinfo[tnum].thread_id, &key);
+
 		if(key != NULL)
 			printf("Find: %s\n\n", (char*) key);
 		else
