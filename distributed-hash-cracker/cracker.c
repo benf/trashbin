@@ -3,15 +3,9 @@
 
 #include "cracker.h"
 
-void* doing(void* arg)
-{
-	sleep(5);
-}
-
 int main( int argc, char **argv)
 {
 	crack_task task;
-	thread_info** thread_tasks;
 	int option = 0;
 	int optionindex = 0;
 	void* key; // returned key
@@ -108,7 +102,6 @@ int main( int argc, char **argv)
 	tinfo = calloc(thread_number, sizeof(thread_info));
 	if(tinfo == NULL)
 		printf("error: tinfo == NULL\n\n");;
-	pthread_t thread;
 
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
@@ -117,8 +110,6 @@ int main( int argc, char **argv)
 	
 		status = pthread_create(&tinfo[tnum].thread_id, NULL, &start_crack_task, &tinfo[tnum].task);
 	}
-
-	sleep(1);
 
 	for(tnum = 0; tnum < thread_number; ++tnum)
 	{
@@ -155,80 +146,11 @@ int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number,
 	keynr_beginn = task->keyarea_size * tnum;
 
 	printf("beginn key: %d\n\n", keynr_beginn);
-	subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
+	//subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
 	keynr_2_key(*task, keynr_beginn, subtask->start_key);
 	printf("startkey: %s\n\n", subtask->start_key);
 	
 	return 0;
-}
-
-void usage(void)
-{
-	const char* usage_str =
-	"usage: cracker <option>\n\n"
-	"Option                   Discription\n\n"
-	"-h, --hash <HASH>        Define a spezific hash to crack\n"
-	"-c, --charset <CHARSET>  Define charset which the searched\n"
-	"                         password consists of.\n"
-	"-l, --length <NUM>       Maximum password length\n"
-	"-f, --file <FILE>        Password file (like /etc/shadow)\n";
-
-	printf("%s", usage_str);
-}
-
-void print_config(crack_task crack)
-{
-	printf("Charset: %s\n", crack.charset);
-	printf("Base: %d\n", crack.base);
-	printf("Keyrange: %d\n\n", keyrange(crack));
-	printf("Hash: %s\n", crack.hash);
-}
-
-// single cracking thread
-void* start_crack_task(void* arg)
-{
-	char* key;
-//*	
-	crack_task* task = (crack_task *) arg;
-
-	int counter = 0;
-	key = (char*) calloc(sizeof(char), task->keysize_max + 1);
-	
-	if(task->start_key != NULL)
-		strncpy(key, task->start_key, task->keysize_max);
-	
-	do
-	{
-		printf("key: \"%s\"\n", key);
-		if(compare_hash(key, task->hash) == 1)
-			return key;
-		++counter;
-
-		printf("counter: %d\n\n", counter);
-		printf("keyarea_size: %d\n\n", task->keyarea_size);
-
-	}
-	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
-	//while(ben_next_key(crack, key) == 0);
-
-	free(key);
-//*/
-//	char* blub;
-//	blub = (char*) calloc( 1, sizeof(char));
-//	*blub = 'h';
-
-	return NULL; 
-}
-
-//calculate the keyrange
-unsigned long long int keyrange(crack_task crack)
-{
-	int i;
-	int keyrange = 0;
-	for(i = 0; i <= crack.keysize_max; ++i)
-		keyrange += pow(crack.base, i);
-	
-	return keyrange;
 }
 
 // convert a position of a key in the keyrange to the spezific key
@@ -240,7 +162,8 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 
 	if(key == NULL)
 	{
-		key = (char*) calloc( crack.keysize_max + 1, sizeof(char));
+		printf("calloc in function: keynr_2_key!\n\n");
+		key = (char*) calloc(crack.keysize_max + 1, sizeof(char));
 	}
 
 	if(key_nr == 0)
@@ -264,6 +187,70 @@ int keynr_2_key(crack_task crack, int key_nr, char *key)
 	printf("key: %s\n\n", key);
 
 	return 0;
+}
+
+void usage(void)
+{
+	const char* usage_str =
+	"usage: cracker <option>\n\n"
+	"Option                   Discription\n\n"
+	"-h, --hash <HASH>        Define a spezific hash to crack\n"
+	"-c, --charset <CHARSET>  Define charset which the searched\n"
+	"                         password consists of.\n"
+	"-l, --length <NUM>       Maximum password length\n"
+	"-f, --file <FILE>        Password file (like /etc/shadow)\n";
+
+	printf("%s", usage_str);
+}
+
+void print_config(crack_task crack)
+{
+	printf("Charset: %s\n", crack.charset);
+	printf("Base: %d\n", crack.base);
+	//printf("Keyrange: %d\n\n", keyrange(crack));
+	printf("Hash: %s\n", crack.hash);
+}
+
+// single cracking thread
+void* start_crack_task(void* arg)
+{
+	char* key;
+	crack_task* task = (crack_task *) arg;
+
+	int counter = 0;
+	key = (char*) calloc(sizeof(char), task->keysize_max + 1);
+	
+	if(task->start_key != NULL)
+		strncpy(key, task->start_key, task->keysize_max);
+	
+	do
+	{
+		printf("key: \"%s\"\n", key);
+		if(compare_hash(key, task->hash) == 1)
+			return key;
+		++counter;
+
+		printf("counter: %d\n\n", counter);
+		printf("keyarea_size: %d\n\n", task->keyarea_size);
+
+	}
+	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
+	//while(ben_next_key(crack, key) == 0);
+
+	free(key);
+
+	return NULL; 
+}
+
+//calculate the keyrange
+unsigned long long int keyrange(crack_task crack)
+{
+	int i;
+	int keyrange = 0;
+	for(i = 0; i <= crack.keysize_max; ++i)
+		keyrange += pow(crack.base, i);
+	
+	return keyrange;
 }
 
 //increas the key by one
