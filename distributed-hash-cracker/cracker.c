@@ -161,16 +161,8 @@ int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number,
 	subtask->keyarea_size	= task->keyarea_size;
 
 	keynr_beginn = task->keyarea_size * tnum;
-
-	//printf("beginn key: %d\n\n", keynr_beginn);
-	subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
 	keynr_2_key(*task, keynr_beginn, &subtask->start_key);
 
-	if(subtask->start_key == NULL)
-		printf("start_key is NULL\n");
-
-	//printf("startkey: \"%s\"\n\n", subtask->start_key);
-	
 	return 0;
 }
 
@@ -182,34 +174,25 @@ void keynr_2_key(crack_task crack, int key_nr, char **key)
 	int keylen = 0;
 
 	if(*key == NULL)
-	{
-		printf("calloc %d byte in function: keynr_2_key!\n\n", crack.keysize_max+1);
 		*key = (char*) calloc(crack.keysize_max + 1, sizeof(char));
-	}
 	
-	printf("KEY = ZERO?!\n\n");
-
 	if(key_nr == 0)
 	{
 		*key[0] = '\0';
 		return;
 	}
-	printf("blub!\n\n");
+	
 	for(keylen = 0; key_nr >= pow(crack.base, keylen); ++keylen)
 		key_nr -= pow(crack.base, keylen);
-	printf("DOing!!!!\n\n");	
+	
 	do
 	{
 		char_nr = key_nr % crack.base;
 		key_nr = key_nr / crack.base;
-		printf("befor! i: %d keylen: %d\n\n", i, keylen);
-		*&key[i] = crack.charset[char_nr];
-		printf("after\n\n");
+		(*key)[i] = crack.charset[char_nr];
 		i++;
 	}
 	while(key_nr != 0 || strlen(*key) != keylen);
-
-	printf("key: %s\n\n", *key);
 }
 
 void usage(void)
@@ -248,7 +231,7 @@ void* start_crack_task(void* arg)
 		++counter;
 	}
 	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
-	//while(ben_next_key(crack, key) == 0);
+	//while(ben_next_key(crack, key) == 0); // second implementation
 
 	free(key);
 
