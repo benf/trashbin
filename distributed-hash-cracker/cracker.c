@@ -1,6 +1,13 @@
 #include <unistd.h>
 #include <getopt.h>
 
+/* Netzwork */
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+
 #include "cracker.h"
 
 int main( int argc, char **argv)
@@ -27,11 +34,12 @@ int main( int argc, char **argv)
 		{"length"	, 1, NULL, 'l'},
 		{"file"		, 1, NULL, 'f'},
 		{"threads"	, 1, NULL, 't'},
+		{"server"	, 0, NULL, 's'},
 		{0, 0, 0, 0}
 	};
 
 	// analysing commandline options
-	while((option = getopt_long( argc, argv, "ha:c:l:f:t:", long_options, &optionindex)) != -1)
+	while((option = getopt_long( argc, argv, "ha:c:l:f:t:s::", long_options, &optionindex)) != -1)
 	{
 		switch (option)
 		{
@@ -64,6 +72,10 @@ int main( int argc, char **argv)
 						return -1;
 
 				thread_number = atoi(optarg);
+				break;
+
+			case 's':
+				printf("This feature is noch implemented!\n");
 				break;
 
 			case 'h':
@@ -117,8 +129,14 @@ int main( int argc, char **argv)
 	}
 	
 	if(key != NULL)
-	free(key);
+		free(key);
 
+	return 0;
+}
+
+int start_server(crack_task task, char* location)
+{
+	
 	return 0;
 }
 
@@ -146,7 +164,7 @@ int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number,
 
 	//printf("beginn key: %d\n\n", keynr_beginn);
 	subtask->start_key = (char*) calloc(subtask->keysize_max, sizeof(char));
-	keynr_2_key(*task, keynr_beginn, subtask->start_key);
+	keynr_2_key(*task, keynr_beginn, &subtask->start_key);
 
 	if(subtask->start_key == NULL)
 		printf("start_key is NULL\n");
@@ -157,39 +175,41 @@ int calculate_sub_task(crack_task* task, crack_task* subtask, int thread_number,
 }
 
 // convert a position of a key in the keyrange to the spezific key
-int keynr_2_key(crack_task crack, int key_nr, char *key)
+void keynr_2_key(crack_task crack, int key_nr, char **key)
 {
 	int char_nr = 0;
 	int i = 0;
 	int keylen = 0;
 
-	if(key == NULL)
+	if(*key == NULL)
 	{
-		printf("calloc in function: keynr_2_key!\n\n");
-		key = (char*) calloc(crack.keysize_max + 1, sizeof(char));
+		printf("calloc %d byte in function: keynr_2_key!\n\n", crack.keysize_max+1);
+		*key = (char*) calloc(crack.keysize_max + 1, sizeof(char));
 	}
+	
+	printf("KEY = ZERO?!\n\n");
 
 	if(key_nr == 0)
 	{
-		key[0] = '\0';
-		return 0;
+		*key[0] = '\0';
+		return;
 	}
-
+	printf("blub!\n\n");
 	for(keylen = 0; key_nr >= pow(crack.base, keylen); ++keylen)
 		key_nr -= pow(crack.base, keylen);
-	
+	printf("DOing!!!!\n\n");	
 	do
 	{
 		char_nr = key_nr % crack.base;
 		key_nr = key_nr / crack.base;
-		key[i] = crack.charset[char_nr];
+		printf("befor! i: %d keylen: %d\n\n", i, keylen);
+		*&key[i] = crack.charset[char_nr];
+		printf("after\n\n");
 		i++;
 	}
-	while(key_nr != 0 || strlen(key) != keylen);
+	while(key_nr != 0 || strlen(*key) != keylen);
 
-	//printf("key: %s\n\n", key);
-
-	return 0;
+	printf("key: %s\n\n", *key);
 }
 
 void usage(void)
@@ -204,14 +224,6 @@ void usage(void)
 	"-f, --file <FILE>        Password file (like /etc/shadow)\n";
 
 	printf("%s", usage_str);
-}
-
-void print_config(crack_task crack)
-{
-	printf("Charset: %s\n", crack.charset);
-	printf("Base: %d\n", crack.base);
-	//printf("Keyrange: %d\n\n", keyrange(crack));
-	printf("Hash: %s\n", crack.hash);
 }
 
 // single cracking thread
@@ -229,7 +241,10 @@ void* start_crack_task(void* arg)
 	do
 	{
 		if(compare_hash(key, task->hash) == 1)
+		{
+			printf("Thread found Key: %s\n hash:%s\n\n", key, task->hash);
 			return key;
+		}
 		++counter;
 	}
 	while(get_next_key(*task, key, 0) == 0 && counter <= task->keyarea_size);
@@ -330,7 +345,10 @@ int compare_hash(char* key, char* hash)
 	key_hash = (char*) crypt(key, hash);
 
 	if(strncmp(key_hash, hash, strlen(key_hash)) == 0)
+	{
+		printf("Key found: \"%s\" hash: \"%s\"\n\n", key, key_hash);
 		return 1;
+	}
 	
 	return 0;
 }

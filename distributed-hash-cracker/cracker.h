@@ -36,7 +36,7 @@ typedef struct {
 } thread_info;
 
 unsigned long long int keyrange(crack_task);
-int keynr_2_key(crack_task, int, char*);
+void keynr_2_key(crack_task, int, char**);
 int get_next_key(crack_task, char*, int);
 int ben_next_key(crack_task, char*);
 int compare_hash(char*, char*);
