@@ -5,7 +5,16 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef __LINUX__
 #include <crypt.h>
+#endif
+
+#ifdef __OBSD__
+#include <pwd.h>
+#include <unistd.h>
+#endif
+
 #include <pthread.h>
 #include <ctype.h>
 

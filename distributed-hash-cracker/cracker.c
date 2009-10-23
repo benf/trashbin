@@ -16,7 +16,6 @@ int main( int argc, char **argv)
 	int option = 0;
 	int optionindex = 0;
 	void* key; // returned key
-	int i = 0;
 	int status = 0;
 	int thread_number = 1; // user defined number of threads
 	int tnum = 0; // counter for for-loops
@@ -55,7 +54,7 @@ int main( int argc, char **argv)
 				break;
 			
 			case 'l':
-				for(i = 0; i < strlen(optarg); ++i)
+				for(int i = 0; i < strlen(optarg); ++i)
 					if(isdigit(optarg[i]) == 0)
 						return -1;
 
@@ -67,7 +66,7 @@ int main( int argc, char **argv)
 				break;
 
 			case 't':
-				for(i = 0; i < strlen(optarg); ++i)
+				for(int i = 0; i < strlen(optarg); ++i)
 					if(isdigit(optarg[i]) == 0)
 						return -1;
 
@@ -103,6 +102,7 @@ int main( int argc, char **argv)
 		strncpy(task.charset, "abc", 3);
 	}
 
+	// ToDo: find a nice solution for this workaround
 	div_t blub = div( task.keyrange, thread_number);
 	task.keyarea_size = blub.quot;
 	
