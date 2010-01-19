@@ -1,11 +1,12 @@
-#define FOSC 1843200// Clock Speed
+//#define FOSC 1843200// Clock Speed
+#define FOSC 1000000
 #define BAUD 600
 #define MYUBRR FOSC/16/BAUD-1
 
-#define F_CPU 3686400
+//#define F_CPU 3686400
 
 #include <avr/io.h>
-#include <avr/delay.h>
+//#include <avr/delay.h>
 
 void USART_Init(unsigned int ubrr);
 void USART_Transmit( unsigned char data );
@@ -16,8 +17,8 @@ int main( void )
 	USART_Init( MYUBRR );
 	PORTC = 2;
 	while(1) {
-		USART_Transmit(0xff);
-		_delay_ms(500);
+		USART_Transmit('x');
+//		_delay_ms(500);
 	}
 	
 	return 0;
