@@ -5,12 +5,18 @@
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
+
+#ifdef LINUX
 #include <crypt.h>
+#endif
+
+#ifdef __OBSD__
+#include <pwd.h>
+#include <unistd.h>
+#endif
+
 #include <pthread.h>
 #include <ctype.h>
-
-#define MD5	1
-#define SHA1	2
 
 // Define a cracing task and all attribus which related on this
 typedef struct {
@@ -34,6 +40,8 @@ typedef struct {
 	int thread_num;
 	crack_task task;
 } thread_info;
+
+enum algo_num {md5, blowfish, sha1, sha224, sha256, sha384, sha512};
 
 unsigned long long int keyrange(crack_task);
 void keynr_2_key(crack_task, int, char**);
