@@ -14,7 +14,7 @@ $(PROJECT).out: $(SOURCES)
 	$(CC) $(CFLAGS) -I./ -o $(PROJECT).out $(SOURCES) -Os
 
 program: $(PROJECT).hex
-	avrdude -P usb -p m16 -c avrispmkII -e -U flash:w:$(PROJECT).hex
+	avrdude -P usb -p m16 -c avrispmkII -e -U $(PROJECT).hex
 
 clean:
 	rm -f $(PROJECT).out
