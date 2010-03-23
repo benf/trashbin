@@ -1,0 +1,10 @@
+Packages:
+mit_krb5
+pam_krb5
+openldap
+nss_ldap
+ntp
+
+Use-Flags:
+kerberos ldap
+
