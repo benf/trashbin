@@ -1,0 +1,19 @@
+#!/sbin/runscript
+
+depend() {
+	use net hostname
+	before dbus hald nscd
+	need net.eth0 ntp-client
+}
+
+start() {
+	ebegin "Requesting Kerberos Ticket"
+	kinit -k -c /etc/.ldapcache $(hostname -s)
+	eend $? "Error requesting Kerberos Ticket"
+}
+
+stop() {
+	ebegin "Deleting Kerberos Ticket"
+	kdestroy -c /etc/.ldapcache
+	eend $? "Error deleting Kerberos Ticket"
+}
