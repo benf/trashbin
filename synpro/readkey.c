@@ -109,7 +109,7 @@ static inline void reset_color(void) {
 	fflush(stdout);
 }
 #else /* not USE_CURSES */
-static inline void reset_color(void) {};
+static inline void reset_color(void) {}
 static inline char *color(int num) { return ""; } 
 
 // need to use a macro here (putp was already defined in curses.h)
