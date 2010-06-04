@@ -1,0 +1,9 @@
+compile with:
+gcc -o ldap ldap.c -lldap
+
+
+get passwd entries:
+./ldap objectCategory=user
+
+get group entries:
+./ldap objectCategory=group
