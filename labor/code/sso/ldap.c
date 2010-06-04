@@ -131,7 +131,7 @@ void print_group_members(LDAP *ld, struct berval **members, const char *gidNumbe
 		if (ldap_count_values_len(name)) {
 			if (j++ > 0)
 				putchar(',');
-			printf(name[0]->bv_val);
+			fputs(name[0]->bv_val, stdout);
 		}
 		ldap_value_free_len(name);
 		ldap_msgfree(msg);
@@ -164,7 +164,7 @@ void print_group(LDAP *ld, LDAPMessage *entry) {
 			else {
 				if (strcmp("gidNumber", group_attrs[i]) == 0)
 					gidNumber = strdup(values[0]->bv_val);
-				printf(values[0]->bv_val);
+				fputs(values[0]->bv_val, stdout);
 			}
 		}
 		ldap_value_free_len(values);
@@ -194,7 +194,7 @@ void print_passwd(LDAP *ld, LDAPMessage *entry) {
 		if (i > 0)
 			putchar(':');
 		if (ldap_count_values_len(values))
-			printf(values[0]->bv_val);
+			fputs(values[0]->bv_val, stdout);
 		ldap_value_free_len(values);
 	}
 	putchar('\n');
